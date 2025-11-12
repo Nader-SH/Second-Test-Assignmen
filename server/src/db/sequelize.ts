@@ -3,6 +3,11 @@ import { appConfig } from '../config';
 
 export const sequelize = new Sequelize(appConfig.databaseUrl, {
   dialect: 'postgres',
-  logging: false
+  logging: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  }
 });
-

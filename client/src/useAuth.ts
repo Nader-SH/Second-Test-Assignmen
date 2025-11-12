@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AuthResponse, AuthenticatedUser } from './api';
+import type { AuthResponse, AuthenticatedUser } from './api';
 
 interface AuthState {
   token: string;

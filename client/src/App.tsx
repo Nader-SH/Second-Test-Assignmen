@@ -1,12 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  appendOperation,
-  createStartingNumber,
-  fetchDiscussions,
-  CalculationNode,
-  AuthResponse
-} from './api';
+import { appendOperation, createStartingNumber, fetchDiscussions } from './api';
+import type { CalculationNode, AuthResponse } from './api';
 import { usePersistentAuth } from './useAuth';
 import { AuthPanel } from './components/AuthPanel';
 import { StartNumberForm } from './components/StartNumberForm';

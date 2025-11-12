@@ -1,6 +1,8 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { AuthResponse, loginUser, registerUser } from '../api';
+import { loginUser, registerUser } from '../api';
+import type { AuthResponse } from '../api';
 
 interface AuthPanelProps {
   onAuthSuccess: (response: AuthResponse) => void;

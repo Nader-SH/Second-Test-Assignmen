@@ -1,4 +1,4 @@
-import { CalculationNode } from '../api';
+import type { CalculationNode } from '../api';
 import { OperationForm } from './OperationForm';
 
 interface CalculationTreeProps {

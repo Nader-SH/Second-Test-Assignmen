@@ -339,3 +339,102 @@ ul.tree[data-depth='5'] {
   padding-left: 1rem;
 }
 
+/* Edit button styles */
+.edit-button {
+  background-color: #64748b;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.edit-button:hover {
+  background-color: #475569;
+}
+
+.edit-button:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Edit forms */
+.edit-post-form,
+.edit-comment-form {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.edit-post-form .form-group,
+.edit-comment-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.edit-post-form label,
+.edit-comment-form label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.edit-post-form input,
+.edit-post-form textarea,
+.edit-comment-form textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.edit-post-form textarea,
+.edit-comment-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.form-actions button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.form-actions button[type="button"] {
+  background-color: #64748b;
+}
+
+.form-actions button[type="button"]:hover {
+  background-color: #475569;
+}
+
+/* Post and comment meta with edit button */
+.post-meta,
+.comment-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.post-meta .edit-button,
+.comment-meta .edit-button {
+  margin-left: auto;
+}
+

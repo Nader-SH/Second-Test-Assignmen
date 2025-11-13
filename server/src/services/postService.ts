@@ -3,6 +3,9 @@ import { Post } from '../models/Post';
 import { Comment } from '../models/Comment';
 import { User } from '../models/User';
 
+// Import Comment here to avoid circular dependency
+import '../models/index';
+
 export async function getAllPosts(): Promise<PostNode[]> {
   const posts = await Post.findAll({
     include: [
@@ -113,6 +116,67 @@ export async function createPost(
           }
         : null,
     comments: []
+  };
+}
+
+export async function updatePost(
+  postId: string,
+  updates: { title?: string; content?: string },
+  user: AuthenticatedUser
+): Promise<PostNode> {
+  const post = await Post.findByPk(postId, {
+    include: [{ model: User, as: 'createdBy', attributes: ['id', 'username'] }]
+  });
+
+  if (!post) {
+    throw new Error('Post not found.');
+  }
+
+  // Check if user is the owner or has admin role
+  if (post.createdById !== user.id && user.role !== 'admin') {
+    throw new Error('You do not have permission to update this post.');
+  }
+
+  // Update post
+  if (updates.title !== undefined) {
+    post.title = updates.title;
+  }
+  if (updates.content !== undefined) {
+    post.content = updates.content;
+  }
+
+  await post.save();
+
+  const updated = await post.reload({
+    include: [{ model: User, as: 'createdBy', attributes: ['id', 'username'] }]
+  });
+
+  // Get comments for the post
+  const comments = await Comment.findAll({
+    where: { postId: updated.id, parentId: null },
+    include: [
+      {
+        model: User,
+        as: 'createdBy',
+        attributes: ['id', 'username']
+      }
+    ],
+    order: [['createdAt', 'ASC']]
+  });
+
+  return {
+    id: updated.id,
+    title: updated.title,
+    content: updated.content,
+    createdAt: updated.createdAt?.toISOString() ?? new Date().toISOString(),
+    createdBy:
+      updated.createdBy && updated.createdBy.id && updated.createdBy.username
+        ? {
+            id: updated.createdBy.id,
+            username: updated.createdBy.username
+          }
+        : null,
+    comments: await buildCommentTree(comments, updated.id)
   };
 }
 

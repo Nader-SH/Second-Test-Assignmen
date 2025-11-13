@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createPost, createComment, fetchPosts } from './api';
+import { createPost, createComment, fetchPosts, updatePost, updateComment } from './api';
 import type { PostNode, AuthResponse } from './api';
 import { usePersistentAuth } from './useAuth';
 import { AuthPanel } from './components/AuthPanel';
@@ -82,6 +82,68 @@ export default function App() {
     }
   });
 
+  const [pendingPostUpdate, setPendingPostUpdate] = useState<string | null>(null);
+  const [postUpdateError, setPostUpdateError] = useState<{
+    postId: string;
+    message: string;
+  } | null>(null);
+
+  const updatePostMutation = useMutation({
+    mutationFn: async (payload: { postId: string; title: string; content: string }) => {
+      if (!auth) {
+        throw new Error('You must be logged in to update a post.');
+      }
+      setPostUpdateError(null);
+      setPendingPostUpdate(payload.postId);
+      return updatePost(payload.postId, { title: payload.title, content: payload.content }, auth.token);
+    },
+    onSuccess: () => {
+      setPostUpdateError(null);
+      setPendingPostUpdate(null);
+      queryClient.invalidateQueries({ queryKey: ['posts'] }).catch(() => {
+        // ignore refetch errors
+      });
+    },
+    onError: (err: unknown) => {
+      setPostUpdateError({
+        postId: pendingPostUpdate ?? '',
+        message: err instanceof Error ? err.message : 'Unable to update post.'
+      });
+      setPendingPostUpdate(null);
+    }
+  });
+
+  const [pendingCommentUpdate, setPendingCommentUpdate] = useState<string | null>(null);
+  const [commentUpdateError, setCommentUpdateError] = useState<{
+    commentId: string;
+    message: string;
+  } | null>(null);
+
+  const updateCommentMutation = useMutation({
+    mutationFn: async (payload: { postId: string; commentId: string; content: string }) => {
+      if (!auth) {
+        throw new Error('You must be logged in to update a comment.');
+      }
+      setCommentUpdateError(null);
+      setPendingCommentUpdate(payload.commentId);
+      return updateComment(payload.postId, payload.commentId, payload.content, auth.token);
+    },
+    onSuccess: () => {
+      setCommentUpdateError(null);
+      setPendingCommentUpdate(null);
+      queryClient.invalidateQueries({ queryKey: ['posts'] }).catch(() => {
+        // ignore refetch errors
+      });
+    },
+    onError: (err: unknown) => {
+      setCommentUpdateError({
+        commentId: pendingCommentUpdate ?? '',
+        message: err instanceof Error ? err.message : 'Unable to update comment.'
+      });
+      setPendingCommentUpdate(null);
+    }
+  });
+
   const posts: PostNode[] = data ?? [];
 
   return (
@@ -129,11 +191,22 @@ export default function App() {
         <PostList
           posts={posts}
           canEdit={Boolean(auth)}
+          currentUser={auth?.user ?? null}
           onAddComment={(postId, content, parentId) =>
             createCommentMutation.mutate({ postId, content, parentId })
           }
+          onUpdatePost={(postId, title, content) =>
+            updatePostMutation.mutate({ postId, title, content })
+          }
+          onUpdateComment={(postId, commentId, content) =>
+            updateCommentMutation.mutate({ postId, commentId, content })
+          }
           pending={createCommentMutation.isPending}
           error={commentError}
+          isUpdatingPost={updatePostMutation.isPending}
+          updatePostError={postUpdateError}
+          isUpdatingComment={updateCommentMutation.isPending}
+          updateCommentError={commentUpdateError}
         />
 
         {isFetching && !isLoading && <p className="muted">Refreshing…</p>}

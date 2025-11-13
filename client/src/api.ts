@@ -127,3 +127,30 @@ export async function createComment(
   });
   return data.data;
 }
+
+export async function updatePost(
+  postId: string,
+  updates: { title?: string; content?: string },
+  token: string
+): Promise<PostNode> {
+  const data = await request<{ data: PostNode }>(`/api/posts/${postId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+    token
+  });
+  return data.data;
+}
+
+export async function updateComment(
+  postId: string,
+  commentId: string,
+  content: string,
+  token: string
+): Promise<CommentNode> {
+  const data = await request<{ data: CommentNode }>(`/api/posts/${postId}/comments/${commentId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ content }),
+    token
+  });
+  return data.data;
+}

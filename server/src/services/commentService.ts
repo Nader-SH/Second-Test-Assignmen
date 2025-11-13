@@ -52,3 +52,46 @@ export async function createComment(
   };
 }
 
+export async function updateComment(
+  commentId: string,
+  content: string,
+  user: AuthenticatedUser
+): Promise<CommentNode> {
+  const comment = await Comment.findByPk(commentId, {
+    include: [{ model: User, as: 'createdBy', attributes: ['id', 'username'] }]
+  });
+
+  if (!comment) {
+    throw new Error('Comment not found.');
+  }
+
+  // Check if user is the owner or has admin role
+  if (comment.createdById !== user.id && user.role !== 'admin') {
+    throw new Error('You do not have permission to update this comment.');
+  }
+
+  // Update comment
+  comment.content = content;
+  await comment.save();
+
+  const updated = await comment.reload({
+    include: [{ model: User, as: 'createdBy', attributes: ['id', 'username'] }]
+  });
+
+  return {
+    id: updated.id,
+    content: updated.content,
+    postId: updated.postId,
+    parentId: updated.parentId,
+    createdAt: updated.createdAt?.toISOString() ?? new Date().toISOString(),
+    createdBy:
+      updated.createdBy && updated.createdBy.id && updated.createdBy.username
+        ? {
+            id: updated.createdBy.id,
+            username: updated.createdBy.username
+          }
+        : null,
+    replies: []
+  };
+}
+

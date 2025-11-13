@@ -1,7 +1,8 @@
 import cors from 'cors';
 import express from 'express';
 import { authRouter } from './routes/authRoutes';
-import { discussionRouter } from './routes/discussionRoutes';
+import { postRouter } from './routes/postRoutes';
+import { commentRouter } from './routes/commentRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 export const app = express();
@@ -14,7 +15,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
-app.use('/api/discussions', discussionRouter);
+app.use('/api/posts', postRouter);
+app.use('/api', commentRouter);
 
 app.use(errorHandler);
 

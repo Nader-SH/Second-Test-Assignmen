@@ -1,23 +1,31 @@
-export type OperationType = 'add' | 'subtract' | 'multiply' | 'divide';
-
 export interface AuthenticatedUser {
   id: string;
   username: string;
   role: string;
 }
 
-export interface CalculationNode {
+export interface PostNode {
   id: string;
-  rootId: string;
-  parentId: string | null;
-  operation: OperationType | null;
-  rightOperand: number | null;
-  result: number;
+  title: string;
+  content: string;
   createdAt: string;
   createdBy: {
     id: string;
     username: string;
   } | null;
-  children: CalculationNode[];
+  comments: CommentNode[];
+}
+
+export interface CommentNode {
+  id: string;
+  content: string;
+  postId: string;
+  parentId: string | null;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    username: string;
+  } | null;
+  replies: CommentNode[];
 }
 

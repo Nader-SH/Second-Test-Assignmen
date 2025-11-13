@@ -1,87 +1,95 @@
 import { useCallback, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { appendOperation, createStartingNumber, fetchDiscussions } from './api';
-import type { CalculationNode, AuthResponse } from './api';
+import { createPost, createComment, fetchPosts } from './api';
+import type { PostNode, AuthResponse } from './api';
 import { usePersistentAuth } from './useAuth';
 import { AuthPanel } from './components/AuthPanel';
-import { StartNumberForm } from './components/StartNumberForm';
-import { CalculationTree } from './components/CalculationTree';
+import { PostForm } from './components/PostForm';
+import { PostList } from './components/PostList';
 
 export default function App() {
   const queryClient = useQueryClient();
   const { auth, login, logout } = usePersistentAuth();
   const [creationError, setCreationError] = useState<string | null>(null);
-  const [operationNodeId, setOperationNodeId] = useState<string | null>(null);
-  const [operationError, setOperationError] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState<{ postId: string; commentId: string | null; message: string } | null>(null);
 
   const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ['discussions'],
-    queryFn: fetchDiscussions,
+    queryKey: ['posts'],
+    queryFn: fetchPosts,
     refetchInterval: 10000
   });
 
   const handleAuthSuccess = useCallback(
     (response: AuthResponse) => {
       login(response);
-      queryClient.invalidateQueries({ queryKey: ['discussions'] }).catch(() => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] }).catch(() => {
         // ignore refetch errors
       });
     },
     [login, queryClient]
   );
 
-  const createRootMutation = useMutation({
-    mutationFn: async (value: number) => {
+  const createPostMutation = useMutation({
+    mutationFn: async (payload: { title: string; content: string }) => {
       if (!auth) {
-        throw new Error('You must be logged in to create a discussion.');
+        throw new Error('You must be logged in to create a post.');
       }
       setCreationError(null);
-      return createStartingNumber(value, auth.token);
+      return createPost(payload.title, payload.content, auth.token);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['discussions'] }).catch(() => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] }).catch(() => {
         // ignore refetch errors
       });
     },
     onError: (err: unknown) => {
-      setCreationError(err instanceof Error ? err.message : 'Unable to create discussion.');
+      setCreationError(err instanceof Error ? err.message : 'Unable to create post.');
     }
   });
 
-  const addOperationMutation = useMutation({
+  const [pendingComment, setPendingComment] = useState<{
+    postId: string;
+    parentId: string | null;
+  } | null>(null);
+
+  const createCommentMutation = useMutation({
     mutationFn: async (payload: {
-      parentId: string;
-      operation: 'add' | 'subtract' | 'multiply' | 'divide';
-      rightOperand: number;
+      postId: string;
+      content: string;
+      parentId: string | null;
     }) => {
       if (!auth) {
-        throw new Error('You must be logged in to respond.');
+        throw new Error('You must be logged in to comment.');
       }
-      setOperationError(null);
-      setOperationNodeId(payload.parentId);
-      return appendOperation(payload.parentId, payload, auth.token);
+      setCommentError(null);
+      setPendingComment({ postId: payload.postId, parentId: payload.parentId });
+      return createComment(payload.postId, payload.content, payload.parentId, auth.token);
     },
     onSuccess: () => {
-      setOperationNodeId(null);
-      setOperationError(null);
-      queryClient.invalidateQueries({ queryKey: ['discussions'] }).catch(() => {
+      setCommentError(null);
+      setPendingComment(null);
+      queryClient.invalidateQueries({ queryKey: ['posts'] }).catch(() => {
         // ignore refetch errors
       });
     },
     onError: (err: unknown) => {
-      setOperationError(err instanceof Error ? err.message : 'Unable to add operation.');
+      setCommentError({
+        postId: pendingComment?.postId ?? '',
+        commentId: pendingComment?.parentId ?? null,
+        message: err instanceof Error ? err.message : 'Unable to add comment.'
+      });
+      setPendingComment(null);
     }
   });
 
-  const discussions: CalculationNode[] = data ?? [];
+  const posts: PostNode[] = data ?? [];
 
   return (
     <div className="app-shell">
       <header className="header">
-        <h1>Number Discussion Board</h1>
+        <h1>Discussion Board</h1>
         <p>
-          Explore chains of calculations started by the community. Sign in to begin your own or add
-          to existing discussions.
+          Explore posts and comments from the community. Sign in to create your own post or comment on existing ones.
         </p>
       </header>
 
@@ -101,33 +109,31 @@ export default function App() {
       )}
 
       <div className="card">
-        <h2>Calculation Trees</h2>
+        <h2>Posts</h2>
 
         {auth && (
-          <StartNumberForm
-            onCreate={(value) => createRootMutation.mutate(value)}
-            isLoading={createRootMutation.isPending}
+          <PostForm
+            onCreate={(title, content) => createPostMutation.mutate({ title, content })}
+            isLoading={createPostMutation.isPending}
             error={creationError}
           />
         )}
 
-        {isLoading && <p className="loading">Loading discussions…</p>}
+        {isLoading && <p className="loading">Loading posts…</p>}
         {error && (
           <p className="error-text">
-            {error instanceof Error ? error.message : 'Failed to load discussions.'}
+            {error instanceof Error ? error.message : 'Failed to load posts.'}
           </p>
         )}
 
-        <CalculationTree
-          nodes={discussions}
+        <PostList
+          posts={posts}
           canEdit={Boolean(auth)}
-          onAddOperation={(parentId, payload) =>
-            addOperationMutation.mutate({ parentId, ...payload })
+          onAddComment={(postId, content, parentId) =>
+            createCommentMutation.mutate({ postId, content, parentId })
           }
-          pendingNodeId={operationNodeId}
-          pending={addOperationMutation.isPending}
-          errorNodeId={operationNodeId}
-          errorMessage={operationError}
+          pending={createCommentMutation.isPending}
+          error={commentError}
         />
 
         {isFetching && !isLoading && <p className="muted">Refreshing…</p>}
@@ -135,4 +141,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -1,16 +1,26 @@
-export interface CalculationNode {
+export interface PostNode {
   id: string;
-  rootId: string;
-  parentId: string | null;
-  operation: 'add' | 'subtract' | 'multiply' | 'divide' | null;
-  rightOperand: number | null;
-  result: number;
+  title: string;
+  content: string;
   createdAt: string;
   createdBy: {
     id: string;
     username: string;
   } | null;
-  children: CalculationNode[];
+  comments: CommentNode[];
+}
+
+export interface CommentNode {
+  id: string;
+  content: string;
+  postId: string;
+  parentId: string | null;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    username: string;
+  } | null;
+  replies: CommentNode[];
 }
 
 export interface AuthenticatedUser {
@@ -66,8 +76,8 @@ async function request<T>(
   return payload as T;
 }
 
-export async function fetchDiscussions(): Promise<CalculationNode[]> {
-  const data = await request<{ data: CalculationNode[] }>('/api/discussions');
+export async function fetchPosts(): Promise<PostNode[]> {
+  const data = await request<{ data: PostNode[] }>('/api/posts');
   return data.data;
 }
 
@@ -91,31 +101,29 @@ export async function loginUser(payload: {
   });
 }
 
-export async function createStartingNumber(
-  startingNumber: number,
+export async function createPost(
+  title: string,
+  content: string,
   token: string
-): Promise<CalculationNode> {
-  const data = await request<{ data: CalculationNode }>('/api/discussions', {
+): Promise<PostNode> {
+  const data = await request<{ data: PostNode }>('/api/posts', {
     method: 'POST',
-    body: JSON.stringify({ startingNumber }),
+    body: JSON.stringify({ title, content }),
     token
   });
   return data.data;
 }
 
-export async function appendOperation(
-  parentId: string,
-  payload: { operation: 'add' | 'subtract' | 'multiply' | 'divide'; rightOperand: number },
+export async function createComment(
+  postId: string,
+  content: string,
+  parentId: string | null,
   token: string
-): Promise<CalculationNode> {
-  const data = await request<{ data: CalculationNode }>(
-    `/api/discussions/${parentId}/operations`,
-    {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      token
-    }
-  );
+): Promise<CommentNode> {
+  const data = await request<{ data: CommentNode }>(`/api/posts/${postId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ content, parentId }),
+    token
+  });
   return data.data;
 }
-

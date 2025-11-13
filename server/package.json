@@ -7,7 +7,12 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "db:sync": "ts-node src/scripts/syncDatabase.ts"
+    "db:sync": "ts-node src/scripts/syncDatabase.ts",
+    "db:clean": "ts-node src/scripts/cleanDatabase.ts",
+    "db:check": "ts-node src/scripts/checkTables.ts",
+    "db:inspect": "ts-node src/scripts/inspectData.ts",
+    "db:reset": "ts-node src/scripts/resetDatabase.ts",
+    "db:connection": "ts-node src/scripts/showConnection.ts"
   },
   "keywords": [],
   "author": "",
